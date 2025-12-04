@@ -1,45 +1,11 @@
 -- ============================================================================
--- STORAGE BUCKET AND RLS POLICIES SETUP
+-- STORAGE BUCKET SETUP (SIMPLIFIED FOR PUBLIC BUCKET)
 -- ============================================================================
--- This migration sets up the world-assets storage bucket and its security policies
--- for image uploads and public access.
-
--- Create the world-assets storage bucket
-INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES (
-  'world-assets',
-  'world-assets',
-  true, -- Public bucket for easy access to images
-  52428800, -- 50MB file size limit
-  ARRAY['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml']
-) ON CONFLICT (id) DO NOTHING;
-
--- ============================================================================
--- ROW LEVEL SECURITY POLICIES
--- ============================================================================
-
--- Enable RLS on storage.objects
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
-
--- Policy 1: Allow authenticated users to upload files to world-assets bucket
-CREATE POLICY "Allow authenticated uploads to world-assets" ON storage.objects
-FOR INSERT TO authenticated
-WITH CHECK (bucket_id = 'world-assets');
-
--- Policy 2: Allow authenticated users to update their own files
-CREATE POLICY "Allow authenticated updates to world-assets" ON storage.objects
-FOR UPDATE TO authenticated
-USING (bucket_id = 'world-assets');
-
--- Policy 3: Allow authenticated users to delete their own files
-CREATE POLICY "Allow authenticated deletes from world-assets" ON storage.objects
-FOR DELETE TO authenticated
-USING (bucket_id = 'world-assets');
-
--- Policy 4: Allow public read access to world-assets bucket
-CREATE POLICY "Allow public reads from world-assets" ON storage.objects
-FOR SELECT TO public
-USING (bucket_id = 'world-assets');
+-- PREREQUISITE: Create the bucket manually in Supabase Dashboard:
+-- 1. Go to Storage → Create new bucket
+-- 2. Name: world-assets
+-- 3. Public bucket: YES (checked) ✓
+----------------------------------------------------------------------------
 
 -- ============================================================================
 -- HELPER FUNCTIONS (Optional)
@@ -102,6 +68,3 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 COMMENT ON FUNCTION get_world_asset_url(TEXT) IS 'Helper function to generate public URLs for world-assets files';
 COMMENT ON FUNCTION cleanup_orphaned_world_assets() IS 'Cleans up storage files that are no longer referenced in the database';
-
--- Add comments to the bucket
-COMMENT ON TABLE storage.buckets IS 'Storage buckets for the application. world-assets contains world images, NPC portraits, and other game assets.';
