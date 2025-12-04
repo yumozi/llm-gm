@@ -1,4 +1,4 @@
-# LLM GM - The AI World Engine
+# LLM GM
 
 A comprehensive world-building and session management platform built with Next.js, Supabase, and modern web technologies.
 

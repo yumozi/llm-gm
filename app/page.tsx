@@ -108,7 +108,7 @@ export default function LandingPage() {
               backgroundClip: 'text',
             }}
           >
-            The AI World Engine
+            AI TTRPG Game Master 
           </motion.p>
 
           {/* CTA Button with enhanced effects */}
