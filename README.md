@@ -1,4 +1,4 @@
-# Mugen AI - The AI World Engine
+# LLM GM - The AI World Engine
 
 A comprehensive world-building and session management platform built with Next.js, Supabase, and modern web technologies.
 
@@ -34,7 +34,7 @@ A comprehensive world-building and session management platform built with Next.j
 1. Clone the repository:
 ```bash
 git clone <your-repo-url>
-cd mugen-ai
+cd llm-gm
 ```
 
 2. Install dependencies:
@@ -76,7 +76,7 @@ npm run dev
 ## Project Structure
 
 ```
-mugen-ai/
+llm-gm/
 ├── app/                    # Next.js app router pages
 │   ├── auth/              # Authentication pages
 │   ├── browse/            # Browse worlds page

@@ -110,7 +110,7 @@ export default function AuthPage() {
         >
           <Card className="w-full max-w-md border-border bg-bg-1/80 backdrop-blur-sm">
             <CardHeader>
-              <CardTitle className="text-2xl font-bold text-accent">Welcome to Mugen AI</CardTitle>
+              <CardTitle className="text-2xl font-bold text-accent">Welcome to LLM GM</CardTitle>
               <CardDescription>Sign in to start your adventure</CardDescription>
             </CardHeader>
             <CardContent>

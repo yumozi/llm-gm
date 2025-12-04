@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Mugen AI - The AI World Engine",
+  title: "LLM GM - The AI Game Master",
   description: "Create and explore AI-powered worlds and stories",
 };
 

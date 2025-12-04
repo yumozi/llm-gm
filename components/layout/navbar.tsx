@@ -38,7 +38,7 @@ export function Navbar() {
             filter: 'drop-shadow(0 0 20px rgba(110, 231, 242, 0.3))',
           }}
         >
-          Mugen AI
+          LLM GM
         </motion.div>
       </div>
 

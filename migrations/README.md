@@ -1,6 +1,6 @@
 # Database Migrations
 
-This folder contains SQL migration files for the Mugen AI world engine database.
+This folder contains SQL migration files for the LLM GM database.
 
 ## Migration Files
 

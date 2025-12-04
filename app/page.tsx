@@ -91,7 +91,7 @@ export default function LandingPage() {
                 backgroundClip: 'text',
               }}
             >
-              Mugen AI
+              LLM GM
             </motion.h1>
           </div>
 
