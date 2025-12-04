@@ -67,7 +67,10 @@ export default function WorldEditorPage() {
         .from('world-assets')
         .upload(filePath, file)
 
-      if (uploadError) throw uploadError
+      if (uploadError) {
+        console.error('Upload error:', uploadError)
+        throw uploadError
+      }
 
       const {
         data: { publicUrl },
@@ -86,11 +89,16 @@ export default function WorldEditorPage() {
         })
         .eq('id', world.id)
 
-      if (saveError) throw saveError
+      if (saveError) {
+        console.error('Save error:', saveError)
+        throw saveError
+      }
 
       toast.success('Image uploaded and saved successfully')
-    } catch {
-      toast.error('Failed to upload image')
+    } catch (error) {
+      console.error('Image upload failed:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      toast.error(`Failed to upload image: ${errorMessage}`)
     } finally {
       setUploading(false)
     }

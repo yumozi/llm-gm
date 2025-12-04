@@ -8,6 +8,39 @@
 ----------------------------------------------------------------------------
 
 -- ============================================================================
+-- STORAGE POLICIES (Required for uploads to work!)
+-- ============================================================================
+
+-- Allow anyone to upload files to world-assets bucket
+-- Note: For production, you'd want to restrict this to authenticated users only
+CREATE POLICY "Allow public uploads to world-assets"
+ON storage.objects
+FOR INSERT
+TO public
+WITH CHECK (bucket_id = 'world-assets');
+
+-- Allow anyone to update files in world-assets bucket
+CREATE POLICY "Allow public updates to world-assets"
+ON storage.objects
+FOR UPDATE
+TO public
+USING (bucket_id = 'world-assets');
+
+-- Allow anyone to delete files from world-assets bucket
+CREATE POLICY "Allow public deletes from world-assets"
+ON storage.objects
+FOR DELETE
+TO public
+USING (bucket_id = 'world-assets');
+
+-- Public bucket already allows SELECT, but let's be explicit
+CREATE POLICY "Allow public reads from world-assets"
+ON storage.objects
+FOR SELECT
+TO public
+USING (bucket_id = 'world-assets');
+
+-- ============================================================================
 -- HELPER FUNCTIONS (Optional)
 -- ============================================================================
 
@@ -32,18 +65,18 @@ BEGIN
     FROM storage.objects
     WHERE bucket_id = 'world-assets'
     AND name NOT IN (
-      SELECT DISTINCT 
-        CASE 
-          WHEN image_url IS NOT NULL THEN 
+      SELECT DISTINCT
+        CASE
+          WHEN image_url IS NOT NULL THEN
             substring(image_url from 'world-assets/(.*)$')
           ELSE NULL
         END
       FROM worlds
       WHERE image_url IS NOT NULL
       UNION
-      SELECT DISTINCT 
-        CASE 
-          WHEN image_url IS NOT NULL THEN 
+      SELECT DISTINCT
+        CASE
+          WHEN image_url IS NOT NULL THEN
             substring(image_url from 'world-assets/(.*)$')
           ELSE NULL
         END
@@ -52,12 +85,12 @@ BEGIN
     )
   LOOP
     -- Delete the orphaned file
-    DELETE FROM storage.objects 
+    DELETE FROM storage.objects
     WHERE name = file_record.name AND bucket_id = file_record.bucket_id;
-    
+
     deleted_count := deleted_count + 1;
   END LOOP;
-  
+
   RETURN deleted_count;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
