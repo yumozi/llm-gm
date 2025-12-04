@@ -6,7 +6,7 @@ This folder contains SQL migration files for the Mugen AI world engine database.
 
 The migrations should be executed in numerical order:
 
-1. `001_extensions.sql` - Enable required PostgreSQL extensions (pgvector, ltree, pg_trgm, pgcrypto)
+1. `001_extensions.sql` - Enable required PostgreSQL extensions (vector, ltree, pg_trgm, pgcrypto)
 2. `002_worlds.sql` - Create worlds table
 3. `003_abilities.sql` - Create abilities table
 4. `004_items.sql` - Create items table
@@ -53,6 +53,6 @@ done
 ## Notes
 
 - All tables use UUID primary keys
-- Embeddings use vector(1536) for pgvector
+- Embeddings use vector(1536) for vector
 - Locations use ltree for hierarchical paths
 - RLS policies should be configured separately for multi-tenant access control

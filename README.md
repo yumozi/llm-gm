@@ -14,7 +14,7 @@ A comprehensive world-building and session management platform built with Next.j
 ## Tech Stack
 
 - **Framework**: Next.js 15 (App Router)
-- **Database**: Supabase (PostgreSQL with pgvector, ltree)
+- **Database**: Supabase (PostgreSQL with vector, ltree)
 - **Authentication**: Supabase Auth
 - **UI Components**: shadcn/ui
 - **Styling**: Tailwind CSS v4
