@@ -46,6 +46,15 @@ export default function SessionPage() {
       if (sessionError) throw sessionError
       setSession(sessionData)
 
+      // Fetch player fields for the world first
+      const { data: fieldsData } = await supabase
+        .from('world_player_fields')
+        .select('*')
+        .eq('world_id', sessionData.world_id)
+        .order('display_order')
+
+      setPlayerFields(fieldsData?.filter(f => !f.is_hidden) || [])
+
       // Fetch player
       const { data: playerData } = await supabase
         .from('players')
@@ -53,17 +62,38 @@ export default function SessionPage() {
         .eq('session_id', params.id)
         .maybeSingle()
 
-      setPlayer(playerData)
+      if (playerData) {
+        setPlayer(playerData)
+      } else if (fieldsData && fieldsData.length > 0) {
+        // Initialize player with dynamic_fields based on world_player_fields
+        const initialDynamicFields: Record<string, unknown> = {}
+        fieldsData.forEach((field) => {
+          initialDynamicFields[field.field_name] = field.default_value
+        })
 
-      // Fetch player fields for the world
-      const { data: fieldsData } = await supabase
-        .from('world_player_fields')
-        .select('*')
-        .eq('world_id', sessionData.world_id)
-        .eq('is_hidden', false)
-        .order('display_order')
-
-      setPlayerFields(fieldsData || [])
+        setPlayer({
+          id: '',
+          session_id: params.id as string,
+          name: '',
+          appearance: '',
+          state: null,
+          dynamic_fields: initialDynamicFields,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as Player)
+      } else {
+        // No player fields, just initialize with empty dynamic_fields
+        setPlayer({
+          id: '',
+          session_id: params.id as string,
+          name: '',
+          appearance: '',
+          state: null,
+          dynamic_fields: {},
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as Player)
+      }
 
       // Fetch messages
       const { data: messagesData } = await supabase
@@ -167,7 +197,7 @@ export default function SessionPage() {
     }
 
     try {
-      if (player.id) {
+      if (player.id && player.id !== '') {
         // Update existing player
         const { error } = await supabase
           .from('players')
@@ -190,7 +220,7 @@ export default function SessionPage() {
             name: player.name,
             appearance: player.appearance,
             state: player.state,
-            dynamic_fields: player.dynamic_fields,
+            dynamic_fields: player.dynamic_fields || {},
           })
           .select()
           .single()
@@ -200,7 +230,8 @@ export default function SessionPage() {
       }
 
       toast.success('Player saved!')
-    } catch {
+    } catch (error) {
+      console.error('Failed to save player:', error)
       toast.error('Failed to save player')
     }
   }
