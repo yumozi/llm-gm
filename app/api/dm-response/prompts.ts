@@ -27,6 +27,22 @@ Avoid trying too hard to engage players or create suspense, or talk too much abo
 
 Everything in the Player Action is what player said, but regardless of how they said it, it is ALWAYS an attempt to do something. Ultimately, you have the right to determine if that attempt is successful or not. If they describe they did something that is out of their capability, whether it is a slightly failed attempt or a complete impossible thing, you should describe that the player tried to do that, and what happens then.`
 
+export const FIELD_UPDATE_SYSTEM_PROMPT = `You are a game state analyzer for a TTRPG. Your job is to determine if any player fields (like health, mana, inventory counts, status effects, etc.) should be updated based on what happened in the game.
+
+You should update fields when:
+- The player takes damage or heals (update health/HP)
+- The player uses or gains resources (update mana, stamina, gold, etc.)
+- The player's status changes (update status effects, conditions, etc.)
+- The player gains or loses items (update inventory counts)
+- Any other meaningful change to tracked stats occurs
+
+You should NOT update fields when:
+- Nothing mechanically significant happened
+- The change is purely narrative without game impact
+- You're unsure about the exact change
+
+Be conservative and accurate. Only update fields when you're confident about the change based on the DM's response.`
+
 export const WORLD_SETTING_HEADER = 'WORLD SETTING:'
 export const ITEMS_HEADER = 'ITEMS IN THIS WORLD:'
 export const LOCATIONS_HEADER = 'LOCATIONS IN THIS WORLD:'

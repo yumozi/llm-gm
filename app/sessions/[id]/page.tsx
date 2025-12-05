@@ -157,18 +157,18 @@ export default function SessionPage() {
         },
         (payload) => {
           const newMessage = payload.new as Message
-          
+
           // Only add if we don't already have this message (avoid duplicates from optimistic updates)
           setMessages((prev) => {
-            const exists = prev.some(msg => 
-              msg.id === newMessage.id || 
+            const exists = prev.some(msg =>
+              msg.id === newMessage.id ||
               (msg.content === newMessage.content && msg.created_at === newMessage.created_at)
             )
-            
+
             if (exists) {
               return prev
             }
-            
+
             return [...prev, newMessage]
           })
         }
@@ -179,6 +179,18 @@ export default function SessionPage() {
       channel.unsubscribe()
     }
   }, [params.id, supabase])
+
+  const refreshPlayerData = useCallback(async () => {
+    const { data: playerData } = await supabase
+      .from('players')
+      .select('*')
+      .eq('session_id', params.id)
+      .maybeSingle()
+
+    if (playerData) {
+      setPlayer(playerData)
+    }
+  }, [supabase, params.id])
 
   useEffect(() => {
     fetchSessionData()
@@ -294,7 +306,7 @@ export default function SessionPage() {
 
         if (response.ok) {
           const dmData = await response.json()
-          
+
           // Add DM response to messages
           const dmMessage: Message = {
             id: dmData.messageId || `dm-${Date.now()}`,
@@ -303,8 +315,11 @@ export default function SessionPage() {
             content: dmData.response,
             created_at: new Date().toISOString(),
           }
-          
+
           setMessages((prev) => [...prev, dmMessage])
+
+          // Refresh player data to get updated dynamic fields
+          await refreshPlayerData()
         } else {
           console.error('Failed to get DM response:', response.statusText)
         }

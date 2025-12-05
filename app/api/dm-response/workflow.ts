@@ -3,7 +3,7 @@
  *
  * This workflow orchestrates the DM response generation pipeline:
  *
- * Input → Retrieval → Assembly → Construction → Generation → Persistence → Output
+ * Input → Retrieval → Assembly → Construction → Generation → Persistence → Field Update → Output
  *
  * Each node is a discrete step with clear inputs and outputs.
  */
@@ -18,6 +18,7 @@ import { assembleContext } from './nodes/3-context-assembly'
 import { constructPrompt } from './nodes/4-prompt-construction'
 import { generateResponse } from './nodes/5-llm-generation'
 import { persistOutput } from './nodes/6-output-persistence'
+import { analyzeDynamicFieldUpdates } from './nodes/7-dynamic-field-update'
 
 export type WorkflowInput = {
   sessionId: string | undefined
@@ -41,6 +42,7 @@ export type WorkflowOutput = {
  * 4. Construct Prompt → Create final LLM prompt
  * 5. Generate Response → Call LLM to generate DM response
  * 6. Persist Output → Save response to database
+ * 7. Dynamic Field Update → Analyze response and update player fields if needed
  */
 export async function executeDMResponseWorkflow(
   input: WorkflowInput
@@ -90,6 +92,17 @@ export async function executeDMResponseWorkflow(
   const output = await persistOutput({
     sessionId: validatedInput.sessionId,
     dmResponse,
+    supabase,
+  })
+
+  // ============================================================================
+  // NODE 7: Dynamic Field Update
+  // ============================================================================
+  await analyzeDynamicFieldUpdates({
+    sessionId: validatedInput.sessionId,
+    dmResponse,
+    playerMessage: validatedInput.playerMessage,
+    openai,
     supabase,
   })
 

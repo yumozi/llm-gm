@@ -15,7 +15,8 @@ app/api/dm-response/
 │   ├── 3-context-assembly.ts    # Includes builder functions
 │   ├── 4-prompt-construction.ts
 │   ├── 5-llm-generation.ts
-│   └── 6-output-persistence.ts
+│   ├── 6-output-persistence.ts
+│   └── 7-dynamic-field-update.ts # LLM-powered field updates
 └── README.md
 ```
 
@@ -24,7 +25,7 @@ app/api/dm-response/
 The workflow follows a clear pipeline pattern similar to LangChain/Dify workflows:
 
 ```
-Input → Retrieval → Assembly → Construction → Generation → Persistence → Output
+Input → Retrieval → Assembly → Construction → Generation → Persistence → Field Update → Output
 ```
 
 Each step is a discrete **node** with well-defined inputs and outputs.
@@ -80,6 +81,24 @@ Each step is a discrete **node** with well-defined inputs and outputs.
 - **Output:** `{ dmResponse, messageId }`
 - **Note:** Returns response even if save fails
 
+### Node 7: Dynamic Field Update
+**File:** `nodes/7-dynamic-field-update.ts`
+- **Purpose:** Analyzes the DM response and updates player fields based on what happened
+- **Input:** `{ sessionId, dmResponse, playerMessage, openai, supabase }`
+- **Output:** `{ fieldsUpdated, updates }`
+- **Features:**
+  - Uses OpenAI function calling to determine field changes
+  - Fetches current player state and field definitions
+  - Analyzes player action + DM response for mechanical changes
+  - Automatically updates player fields in database
+  - Conservative approach - only updates when confident
+- **Tool Used:** `update_player_fields` function with field name, new value, and reason
+- **Examples of updates:**
+  - Player takes damage → Update Health field
+  - Player uses spell → Update Mana field
+  - Player gains gold → Update Gold field
+  - Player gets status effect → Update Status field
+
 ## Supporting Files
 
 ### `workflow.ts`
@@ -87,8 +106,9 @@ The main orchestrator that chains all nodes together. Each node is called sequen
 
 ### `prompts.ts`
 Contains all prompt templates and constants (configuration, not logic):
-- `SYSTEM_PROMPT`: System message for the LLM
+- `SYSTEM_PROMPT`: System message for the DM LLM
 - `DM_GUIDELINES`: Detailed instructions for DM behavior
+- `FIELD_UPDATE_SYSTEM_PROMPT`: System message for field update analysis
 - Header constants for each context section (e.g., `WORLD_SETTING_HEADER`, `ITEMS_HEADER`)
 
 ### `route.ts`
@@ -126,6 +146,8 @@ contextSections = assembleContext(retrievedData)
   ↓
 output = persistOutput({ sessionId, dmResponse, supabase })
   ↓
+analyzeDynamicFieldUpdates({ sessionId, dmResponse, playerMessage, openai, supabase })
+  ↓
 return output
 ```
 
@@ -139,6 +161,45 @@ return output
 6. **Extensibility:** New nodes can be added to the pipeline easily
 7. **LLM-First Design:** Structure matches LLM workflow tools (LangChain, Dify)
 
+## Dynamic Field Updates (Node 7)
+
+The workflow includes automatic player field updates using LLM function calling:
+
+### How It Works
+
+1. **After generating the DM response**, Node 7 analyzes what happened
+2. **Fetches player field definitions** from `world_player_fields` table
+3. **Calls LLM with function/tool** to determine if fields should change
+4. **LLM analyzes** the player action + DM response for mechanical changes
+5. **If changes detected**, LLM calls `update_player_fields` tool with:
+   - `field_name`: The field to update
+   - `new_value`: The new value
+   - `reason`: Why it's being updated (for debugging)
+6. **Updates database** automatically with new field values
+
+### Example Flow
+
+```
+Player: "I cast fireball at the goblin"
+DM Response: "The fireball explodes, dealing 25 damage. The goblin falls..."
+
+Node 7 Analysis:
+- Detects spell usage
+- Calls: update_player_fields([
+    { field_name: "Mana", new_value: 35, reason: "Cast fireball (15 mana)" }
+  ])
+- Updates player.dynamic_fields.Mana: 50 → 35
+```
+
+### Conservative Approach
+
+The LLM only updates fields when:
+- There's a clear mechanical change (damage, resource usage, etc.)
+- The change is explicitly described in the DM response
+- It's confident about the exact value
+
+This prevents accidental or speculative updates.
+
 ## Future Enhancements
 
 Potential improvements to the workflow:
@@ -150,3 +211,5 @@ Potential improvements to the workflow:
 - Add **retry logic** with exponential backoff for LLM calls
 - Add **streaming support** for real-time response generation
 - Add **monitoring/observability** hooks at each node
+- Add **field update notifications** to show player what changed
+- Add **validation** to prevent invalid field updates (e.g., negative health)
