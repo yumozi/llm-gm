@@ -95,6 +95,26 @@ export function RuleManager({ worldId }: RuleManagerProps) {
 
     setSaving(true)
     try {
+      // Generate embedding for the rule
+      const embeddingResponse = await fetch('/api/generate-embedding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name.trim(),
+          description: formData.description.trim(),
+          aliases: formData.aliases
+            .split(',')
+            .map((a) => a.trim())
+            .filter(Boolean),
+        }),
+      })
+
+      if (!embeddingResponse.ok) {
+        throw new Error('Failed to generate embedding')
+      }
+
+      const { embedding } = await embeddingResponse.json()
+
       const ruleData = {
         world_id: worldId,
         name: formData.name.trim(),
@@ -104,6 +124,7 @@ export function RuleManager({ worldId }: RuleManagerProps) {
           .filter(Boolean),
         description: formData.description.trim(),
         priority: formData.priority,
+        embedding, // Include the generated embedding
       }
 
       if (selectedRule) {
@@ -123,7 +144,8 @@ export function RuleManager({ worldId }: RuleManagerProps) {
 
       await fetchRules()
       setIsEditing(false)
-    } catch {
+    } catch (error) {
+      console.error('Save error:', error)
       toast.error('Failed to save rule')
     } finally {
       setSaving(false)

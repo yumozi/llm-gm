@@ -62,7 +62,9 @@ export async function executeDMResponseWorkflow(
   // ============================================================================
   const retrievedData = await retrieveData({
     sessionId: validatedInput.sessionId,
+    playerMessage: validatedInput.playerMessage,
     supabase,
+    openai,
   })
 
   // ============================================================================

@@ -155,6 +155,26 @@ export function LocationManager({ worldId }: LocationManagerProps) {
 
     setSaving(true)
     try {
+      // Generate embedding for the location
+      const embeddingResponse = await fetch('/api/generate-embedding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name.trim(),
+          description: formData.description.trim(),
+          aliases: formData.aliases
+            .split(',')
+            .map((a) => a.trim())
+            .filter(Boolean),
+        }),
+      })
+
+      if (!embeddingResponse.ok) {
+        throw new Error('Failed to generate embedding')
+      }
+
+      const { embedding } = await embeddingResponse.json()
+
       const locationData = {
         name: formData.name.trim(),
         description: formData.description.trim(),
@@ -162,6 +182,7 @@ export function LocationManager({ worldId }: LocationManagerProps) {
           .split(',')
           .map((a) => a.trim())
           .filter(Boolean),
+        embedding, // Include the generated embedding
         updated_at: new Date().toISOString(),
       }
 
@@ -179,7 +200,8 @@ export function LocationManager({ worldId }: LocationManagerProps) {
       await fetchLocations(true) // Preserve expanded state
       setIsEditing(false)
       setSelectedLocation(null)
-    } catch {
+    } catch (error) {
+      console.error('Save error:', error)
       toast.error('Failed to save location')
     } finally {
       setSaving(false)

@@ -26,6 +26,8 @@ The migrations should be executed in numerical order:
 18. `018_generated_abilities.sql` - Create generated abilities table
 19. `019_session_messages.sql` - Create session messages table
 20. `020_session_canon_state.sql` - Create session canon state table
+21. `021_storage_setup.sql` - Create storage bucket and policies for image uploads
+22. `022_rag_vector_search.sql` - **[RAG]** Create vector search functions for semantic retrieval
 
 ## How to Run
 
@@ -53,6 +55,36 @@ done
 ## Notes
 
 - All tables use UUID primary keys
-- Embeddings use vector(1536) for vector
+- Embeddings use vector(1536) for RAG semantic search
 - Locations use ltree for hierarchical paths
 - RLS policies should be configured separately for multi-tenant access control
+
+## RAG System (Migration 022)
+
+Migration `022_rag_vector_search.sql` is **critical** for the RAG (Retrieval-Augmented Generation) system to work:
+
+**What it creates:**
+- 7 PostgreSQL functions for vector similarity search:
+  - `match_items()` - Search items by semantic similarity
+  - `match_abilities()` - Search abilities by semantic similarity
+  - `match_locations()` - Search locations by semantic similarity
+  - `match_npcs()` - Search NPCs by semantic similarity
+  - `match_organizations()` - Search organizations by semantic similarity
+  - `match_taxonomies()` - Search taxonomies by semantic similarity
+  - `match_rules()` - Search rules by semantic similarity
+
+**What it does:**
+- Uses pgvector's `<=>` operator for cosine distance calculation
+- Creates IVFFlat indexes on embedding columns for fast search
+- Returns top K most similar entities above a similarity threshold
+
+**Prerequisites:**
+- `pgvector` extension must be enabled (done in migration 001)
+- All entity tables must have `embedding VECTOR(1536)` column (done in respective migrations)
+
+**Without this migration:**
+- RAG retrieval will fail with "function does not exist" errors
+- System will not be able to perform semantic search
+- Context assembly will not work properly
+
+For more details, see [RAG_IMPLEMENTATION.md](../RAG_IMPLEMENTATION.md).
