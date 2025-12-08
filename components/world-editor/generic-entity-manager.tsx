@@ -99,6 +99,26 @@ export function GenericEntityManager({
 
     setSaving(true)
     try {
+      // Generate embedding for the entity
+      const embeddingResponse = await fetch('/api/generate-embedding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name.trim(),
+          description: formData.description.trim(),
+          aliases: formData.aliases
+            .split(',')
+            .map((a) => a.trim())
+            .filter(Boolean),
+        }),
+      })
+
+      if (!embeddingResponse.ok) {
+        throw new Error('Failed to generate embedding')
+      }
+
+      const { embedding } = await embeddingResponse.json()
+
       const entityData = {
         world_id: worldId,
         name: formData.name.trim(),
@@ -107,6 +127,7 @@ export function GenericEntityManager({
           .map((a) => a.trim())
           .filter(Boolean),
         description: formData.description.trim(),
+        embedding, // Include the generated embedding
       }
 
       if (selectedEntity) {
@@ -126,7 +147,8 @@ export function GenericEntityManager({
 
       await fetchEntities()
       setIsEditing(false)
-    } catch {
+    } catch (error) {
+      console.error('Save error:', error)
       toast.error(`Failed to save ${entityName.toLowerCase()}`)
     } finally {
       setSaving(false)

@@ -6,6 +6,7 @@ A comprehensive world-building and session management platform built with Next.j
 
 - **World Building**: Create and manage AI-powered worlds with canon entities (NPCs, items, abilities, locations, organizations, taxonomies, rules, story nodes)
 - **Session Management**: Run interactive sessions within your worlds with dynamic player tracking
+- **RAG-Powered Context**: Intelligent retrieval of relevant game entities using vector similarity search (reduces context size by ~75%)
 - **Authentication**: Secure authentication with Supabase (Email/Password and Google OAuth)
 - **Real-time Chat**: Live session chat with real-time updates
 - **Dynamic Player Fields**: Customizable player attributes per world
@@ -14,7 +15,9 @@ A comprehensive world-building and session management platform built with Next.j
 ## Tech Stack
 
 - **Framework**: Next.js 15 (App Router)
-- **Database**: Supabase (PostgreSQL with vector, ltree)
+- **Database**: Supabase (PostgreSQL with pgvector, ltree)
+- **AI/LLM**: OpenAI GPT-4 + text-embedding-ada-002
+- **RAG**: Vector similarity search with pgvector (IVFFlat indexing)
 - **Authentication**: Supabase Auth
 - **UI Components**: shadcn/ui
 - **Styling**: Tailwind CSS v4
@@ -47,17 +50,21 @@ npm install
 cp .env.local.example .env.local
 ```
 
-Edit `.env.local` and add your Supabase credentials:
+Edit `.env.local` and add your credentials:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key  # For batch scripts
+OPENAI_API_KEY=sk-...  # For RAG embeddings and AI generation
 ```
 
 4. Run database migrations:
 
-Go to your Supabase project dashboard → SQL Editor and run each migration file in the `migrations/` folder in numerical order (001 through 021).
+Go to your Supabase project dashboard → SQL Editor and run each migration file in the `migrations/` folder in numerical order (001 through 022).
 
-**Important**: Make sure to run `021_storage_setup.sql` to set up the storage bucket and permissions for image uploads.
+**Important migrations:**
+- `021_storage_setup.sql` - Storage bucket for image uploads
+- `022_rag_vector_search.sql` - RAG vector search functions (**required for RAG to work**)
 
 Alternatively, if you have Supabase CLI installed:
 ```bash
@@ -168,6 +175,8 @@ npm start
 Required environment variables:
 - `NEXT_PUBLIC_SUPABASE_URL` - Your Supabase project URL
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Your Supabase anonymous key
+- `OPENAI_API_KEY` - Your OpenAI API key (for embeddings and AI generation)
+- `SUPABASE_SERVICE_ROLE_KEY` - Your Supabase service role key (for batch embedding scripts)
 
 ## Contributing
 
@@ -183,9 +192,23 @@ Contributions are welcome! Please follow these steps:
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
+## RAG System
+
+This project implements a **Retrieval-Augmented Generation (RAG)** system for intelligent context selection:
+
+- **Vector Embeddings**: Each game entity (item, NPC, location, etc.) has a 1536-dimensional embedding
+- **Semantic Search**: Uses pgvector with IVFFlat indexing for fast similarity search
+- **Smart Context**: Only retrieves top 3-5 most relevant entities per category (vs. all entities)
+- **Cost Reduction**: Reduces LLM context size by ~75%, significantly lowering API costs
+- **Auto-Generation**: Embeddings are automatically generated when creating/editing entities
+
+For detailed RAG implementation guide, see [RAG_IMPLEMENTATION.md](RAG_IMPLEMENTATION.md).
+
 ## Acknowledgments
 
 - Built with [Next.js](https://nextjs.org/)
 - Powered by [Supabase](https://supabase.com/)
+- AI by [OpenAI](https://openai.com/)
+- Vector search with [pgvector](https://github.com/pgvector/pgvector)
 - UI components from [shadcn/ui](https://ui.shadcn.com/)
 - Animations with [Framer Motion](https://www.framer.com/motion/)

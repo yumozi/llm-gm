@@ -94,6 +94,26 @@ export function ItemManager({ worldId }: ItemManagerProps) {
 
     setSaving(true)
     try {
+      // Generate embedding for the item
+      const embeddingResponse = await fetch('/api/generate-embedding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name.trim(),
+          description: formData.description.trim(),
+          aliases: formData.aliases
+            .split(',')
+            .map((a) => a.trim())
+            .filter(Boolean),
+        }),
+      })
+
+      if (!embeddingResponse.ok) {
+        throw new Error('Failed to generate embedding')
+      }
+
+      const { embedding } = await embeddingResponse.json()
+
       const itemData = {
         world_id: worldId,
         name: formData.name.trim(),
@@ -103,6 +123,7 @@ export function ItemManager({ worldId }: ItemManagerProps) {
           .filter(Boolean),
         description: formData.description.trim(),
         is_unique: formData.is_unique,
+        embedding, // Include the generated embedding
       }
 
       if (selectedItem) {
@@ -122,7 +143,8 @@ export function ItemManager({ worldId }: ItemManagerProps) {
 
       await fetchItems()
       setIsEditing(false)
-    } catch {
+    } catch (error) {
+      console.error('Save error:', error)
       toast.error('Failed to save item')
     } finally {
       setSaving(false)

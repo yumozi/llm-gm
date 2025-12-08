@@ -129,6 +129,29 @@ export function NPCManager({ worldId }: NPCManagerProps) {
 
     setSaving(true)
     try {
+      // Generate embedding for the NPC
+      const embeddingResponse = await fetch('/api/generate-embedding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name.trim(),
+          description: formData.description.trim(),
+          aliases: formData.aliases
+            .split(',')
+            .map((a) => a.trim())
+            .filter(Boolean),
+          additionalContext: [formData.personality, formData.motivations]
+            .filter(Boolean)
+            .join(' '),
+        }),
+      })
+
+      if (!embeddingResponse.ok) {
+        throw new Error('Failed to generate embedding')
+      }
+
+      const { embedding } = await embeddingResponse.json()
+
       const npcData = {
         world_id: worldId,
         name: formData.name.trim(),
@@ -140,6 +163,7 @@ export function NPCManager({ worldId }: NPCManagerProps) {
         personality: formData.personality.trim() || null,
         motivations: formData.motivations.trim() || null,
         image_url: formData.image_url,
+        embedding, // Include the generated embedding
       }
 
       if (selectedNPC) {
@@ -159,7 +183,8 @@ export function NPCManager({ worldId }: NPCManagerProps) {
 
       await fetchNPCs()
       setIsEditing(false)
-    } catch {
+    } catch (error) {
+      console.error('Save error:', error)
       toast.error('Failed to save NPC')
     } finally {
       setSaving(false)
