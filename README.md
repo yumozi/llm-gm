@@ -208,7 +208,6 @@ npm start
 ### Step 1: Create an Account and Login
 
 ![Login Screen](./docs/images/01-login.png)
-_Place screenshot of login/signup page here_
 
 - Navigate to the homepage
 - Click "Sign Up" to create a new account
@@ -220,7 +219,6 @@ _Place screenshot of login/signup page here_
 ### Step 2: Create a New World
 
 ![Create World](./docs/images/02-create-world.png)
-_Place screenshot of world creation page here_
 
 - Once logged in, click "Create World" from the navigation bar
 - You'll be taken to the world editor interface
@@ -231,7 +229,6 @@ _Place screenshot of world creation page here_
 ### Step 3: Fill in World Information
 
 ![World Editor](./docs/images/03-world-editor.png)
-_Place screenshot of world editor with tabs here_
 
 - **World Settings Tab**: Define the world's name, setting, and description
 - **Entities Tabs**: Add game entities across multiple categories:
@@ -251,7 +248,6 @@ _Place screenshot of world editor with tabs here_
 ### Step 4: Start a Session
 
 ![Browse Worlds](./docs/images/04-start-session.png)
-_Place screenshot of browse worlds page with "Start Session" button here_
 
 - Navigate to "Browse Worlds" from the navigation bar
 - Find the world you created in the list
@@ -260,14 +256,11 @@ _Place screenshot of browse worlds page with "Start Session" button here_
   - Character name
   - Character appearance
   - Initial values for any custom player fields
-- Click "Create Session" to begin
-
 ---
 
 ### Step 5: Play
 
 ![Game Session](./docs/images/05-play-session.png)
-_Place screenshot of active game session with chat interface here_
 
 - You'll enter the interactive game session interface
 - The AI Game Master will respond to your actions
