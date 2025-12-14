@@ -1,214 +1,323 @@
-# LLM GM
+# LLLM-GM: Intelligent World and Story Management System for Tabletop Role-Playing Games
 
-A comprehensive world-building and session management platform built with Next.js, Supabase, and modern web technologies.
+## Overview
 
-## Features
+LLM GM is an AI-powered interactive storytelling and game management platform that enables users to create immersive worlds and run dynamic game sessions. Built with Next.js, Supabase, and OpenAI, the platform leverages Large Language Models (LLMs) to act as a Game Master (GM), responding to player actions in real-time and managing game state intelligently.
 
-- **World Building**: Create and manage AI-powered worlds with canon entities (NPCs, items, abilities, locations, organizations, taxonomies, rules, story nodes)
-- **Session Management**: Run interactive sessions within your worlds with dynamic player tracking
-- **RAG-Powered Context**: Intelligent retrieval of relevant game entities using vector similarity search (reduces context size by ~75%)
-- **Authentication**: Secure authentication with Supabase (Email/Password and Google OAuth)
-- **Real-time Chat**: Live session chat with real-time updates
-- **Dynamic Player Fields**: Customizable player attributes per world
-- **Beautiful UI**: Modern, animated interface with Framer Motion and shadcn/ui
+The system features a comprehensive world-building toolkit where users can define NPCs, items, abilities, locations, and more. During gameplay, an advanced Retrieval-Augmented Generation (RAG) system selectively retrieves relevant game entities to provide context to the AI, ensuring coherent and contextually-aware responses while minimizing API costs.
 
-## Tech Stack
-
-- **Framework**: Next.js 15 (App Router)
-- **Database**: Supabase (PostgreSQL with pgvector, ltree)
-- **AI/LLM**: OpenAI GPT-4 + text-embedding-ada-002
-- **RAG**: Vector similarity search with pgvector (IVFFlat indexing)
-- **Authentication**: Supabase Auth
-- **UI Components**: shadcn/ui
-- **Styling**: Tailwind CSS v4
-- **Animations**: Framer Motion
-- **Forms**: React Hook Form + Zod
-- **Icons**: Lucide React
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18+ installed
-- A Supabase account and project
-
-### Installation
-
-1. Clone the repository:
-```bash
-git clone <your-repo-url>
-cd llm-gm
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Set up environment variables:
-```bash
-cp .env.local.example .env.local
-```
-
-Edit `.env.local` and add your credentials:
-```env
-NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key  # For batch scripts
-OPENAI_API_KEY=sk-...  # For RAG embeddings and AI generation
-```
-
-4. Run database migrations:
-
-Go to your Supabase project dashboard → SQL Editor and run each migration file in the `migrations/` folder in numerical order (001 through 022).
-
-**Important migrations:**
-- `021_storage_setup.sql` - Storage bucket for image uploads
-- `022_rag_vector_search.sql` - RAG vector search functions (**required for RAG to work**)
-
-Alternatively, if you have Supabase CLI installed:
-```bash
-for file in migrations/*.sql; do
-  supabase db execute -f "$file"
-done
-```
-
-5. Start the development server:
-```bash
-npm run dev
-```
-
-6. Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-## Project Structure
+## Codebase Layout
 
 ```
 llm-gm/
-├── app/                    # Next.js app router pages
-│   ├── auth/              # Authentication pages
-│   ├── browse/            # Browse worlds page
-│   ├── manage/            # Manage worlds pages
-│   ├── sessions/          # Session management pages
-│   ├── layout.tsx         # Root layout
-│   └── page.tsx           # Landing page
-├── components/            # React components
-│   ├── layout/           # Layout components (Navbar, etc.)
-│   └── ui/               # shadcn/ui components
-├── contexts/             # React contexts (Auth)
-├── lib/                  # Utility libraries
-│   ├── supabase/        # Supabase client setup
-│   ├── database.types.ts # Database types
-│   └── utils.ts         # Utility functions
-├── migrations/          # Database migration files
-└── public/             # Static assets
+├── app/
+│   ├── api/
+│   │   ├── dm-response/
+│   │   │   ├── route.ts              API endpoint for DM response generation
+│   │   │   ├── workflow.ts           Orchestrates the 7-step DM workflow
+│   │   │   ├── prompts.ts            Prompt templates for LLM calls
+│   │   │   └── nodes/                Individual workflow steps (1-7)
+│   │   └── generate-embedding/
+│   │       └── route.ts              API endpoint for vector embedding generation
+│   ├── auth/
+│   │   └── callback/
+│   │       └── route.ts              OAuth callback handler
+│   ├── browse/
+│   │   └── page.tsx                  Browse and search worlds
+│   ├── manage/
+│   │   └── [id]/
+│   │       └── page.tsx              World editor interface
+│   ├── sessions/
+│   │   └── [id]/
+│   │       └── page.tsx              Live game session interface
+│   ├── layout.tsx                    Root layout with auth provider
+│   └── page.tsx                      Landing page
+│
+├── components/
+│   ├── layout/
+│   │   └── Navbar.tsx                Main navigation bar
+│   ├── ui/                           Reusable UI components (shadcn/ui)
+│   └── world-editor/
+│       └── EntityEditor.tsx          Generic entity CRUD interface
+│
+├── contexts/
+│   └── AuthContext.tsx               Authentication state management
+│
+├── experiments/
+│   ├── function-calling.ts           Compares function calling vs SQL generation for field updates
+│   ├── rag_experiments.ipynb         Main RAG evaluation notebook (baseline, ablation studies)
+│   ├── config.py                     Experiment parameters (thresholds, top-k values, runs)
+│   ├── test_scenarios.json           Test cases for RAG experiments
+│   ├── add_entities.py               Helper to populate test world with entities
+│   └── utils/
+│       ├── rag_simulator.py          Simulates RAG retrieval for testing
+│       └── metrics.py                Calculates token usage, latency, cost metrics
+│
+├── lib/
+│   ├── supabase/
+│   │   ├── client.ts                 Browser Supabase client
+│   │   └── server.ts                 Server-side Supabase client
+│   └── database.types.ts             TypeScript types generated from database schema
+│
+├── migrations/                       Run in order in Supabase SQL Editor
+│   ├── 001_extensions.sql            Enable pgvector and ltree extensions
+│   ├── 002_worlds.sql                Core worlds table
+│   ├── 003-020_*.sql                 Entity tables (items, NPCs, locations, abilities, etc.)
+│   ├── 021_storage_setup.sql         Image upload storage buckets
+│   └── 022_rag_vector_search.sql     Vector similarity search functions for RAG
+│
+└── scripts/
+    └── generate-embeddings.ts        Batch generate embeddings for existing entities
 ```
 
-## Database Schema
+## Testing
 
-### Canon Tables (World-scoped)
-- `worlds` - World definitions
-- `abilities` - Character abilities
-- `items` - Items and equipment
-- `organizations` - Factions and groups
-- `taxonomies` - Classification systems
-- `locations` - Hierarchical locations (using ltree)
-- `npcs` - Non-player characters
-- `rules` - World rules and mechanics
-- `story_nodes` - Story progression nodes
-- `story_edges` - Story connections
-- `world_player_fields` - Custom player field definitions
+The project includes comprehensive testing across multiple levels:
 
-### Runtime Tables (Session-scoped)
-- `sessions` - Game sessions
-- `players` - Player characters
-- `generated_items` - Session-specific items
-- `generated_characters` - Session-specific NPCs
-- `generated_locations` - Session-specific locations
-- `generated_abilities` - Session-specific abilities
-- `session_messages` - Chat messages
-- `session_canon_state` - Session-specific state overrides
+### Unit & Integration Tests
 
-## Key Features
+- **Unit Tests**: Component and utility function tests
+  - `components/ui/card.test.tsx` - UI component tests
+  - `lib/utils.test.ts` - Utility function tests
 
-### Authentication
-- Email/Password authentication
-- Google OAuth
-- Protected routes with middleware
-- Persistent sessions
+- **Integration Tests**: Database and API integration tests
+  - `lib/supabase.integration.test.ts` - Supabase database operations
 
-### World Management
-- Create and edit worlds
-- Define NPCs, items, abilities, locations, and more
-- Tabbed editor interface
-- Auto-save functionality
-- Image upload support
-
-### Session Management
-- Browse and start sessions from existing worlds
-- Dynamic player creation with custom fields
-- Real-time chat interface
-- Player state tracking
-- Session history
-
-### Design System
-- Custom dark theme with cyan/violet/amber accents
-- Consistent spacing and typography
-- Smooth animations and transitions
-- Responsive design
-- Accessibility-friendly
-
-## Development
-
-### Running Tests
+Run tests with:
 ```bash
 npm test
 ```
 
-### Building for Production
+### Experimental Research
+
+The project includes two main experimental frameworks for evaluating system performance:
+
+#### 1. RAG System Experiments (Python)
+
+**Main Files:**
+- `experiments/rag_experiments.ipynb`
+- `experiments/config.py`
+- `experiments/test_scenarios.json`
+- `experiments/requirements.txt`
+
+**Purpose:** Evaluate RAG system performance against baselines (No RAG, Random Sampling) and conduct ablation studies.
+
+**Setup:**
+```bash
+cd experiments
+pip install -r requirements.txt
+jupyter notebook rag_experiments.ipynb
+```
+
+**What it tests:**
+- Baseline comparison: No RAG vs Random Sampling vs RAG
+- RAG threshold ablation (0.5, 0.65, 0.8)
+- Top K ablation (3, 5, 10 entities)
+- Temperature ablation (0.5, 0.8, 1.0)
+
+**Results:** Generated in `experiments/results/` (CSV files, plots, statistical analysis)
+
+#### 2. Function Calling Experiment (TypeScript)
+
+**Main File:**
+- `experiments/function-calling.ts`
+
+**Purpose:** Compare LLM function calling approach vs SQL generation for dynamic player field updates.
+
+**Run:**
+```bash
+npm run experiment [numTrials]
+# Example: npm run experiment 5
+```
+
+**What it tests:**
+- Function calling approach (OpenAI tools)
+- SQL generation approach
+- Token usage and latency comparison
+
+**See `experiments/README.md` for detailed experiment documentation.**
+
+## Setup
+
+### Prerequisites
+
+- Node.js 18 or higher
+- A Supabase account
+- An OpenAI API key
+
+### Installation Steps
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd llm-gm
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Create a Supabase account and project**
+   - Go to [supabase.com](https://supabase.com)
+   - Create a new account if you don't have one
+   - Create a new project
+   - Wait for the project to finish provisioning
+
+4. **Configure environment variables**
+   - Copy `.env.example` to `.env`:
+     ```bash
+     cp .env.example .env
+     ```
+   - Open `.env` and fill in your credentials:
+     - `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase project URL (found in Project Settings > API)
+     - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase anon/public key (found in Project Settings > API)
+     - `OPENAI_API_KEY`: Your OpenAI API key (from [platform.openai.com](https://platform.openai.com))
+
+5. **Run database migrations**
+   - Go to your Supabase project dashboard
+   - Navigate to the SQL Editor
+   - Run each migration file in the `migrations/` folder **in numerical order**:
+     1. `001_extensions.sql`
+     2. `002_worlds.sql`
+     3. `003_abilities.sql`
+     4. Continue through all files...
+     5. `022_rag_vector_search.sql` (critical for RAG functionality)
+
+   **Note**: You must run the migrations in order as later migrations depend on earlier ones.
+
+## Running the App
+
+Start the development server:
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+For production build:
+
 ```bash
 npm run build
 npm start
 ```
 
-### Environment Variables
+## Usage Guide
 
-Required environment variables:
-- `NEXT_PUBLIC_SUPABASE_URL` - Your Supabase project URL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Your Supabase anonymous key
-- `OPENAI_API_KEY` - Your OpenAI API key (for embeddings and AI generation)
-- `SUPABASE_SERVICE_ROLE_KEY` - Your Supabase service role key (for batch embedding scripts)
+### Step 1: Create an Account and Login
 
-## Contributing
+![Login Screen](./docs/images/01-login.png)
+_Place screenshot of login/signup page here_
 
-Contributions are welcome! Please follow these steps:
+- Navigate to the homepage
+- Click "Sign Up" to create a new account
+- Enter your email and password, or sign in with Google
+- After signing up, log in with your credentials
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+---
 
-## License
+### Step 2: Create a New World
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+![Create World](./docs/images/02-create-world.png)
+_Place screenshot of world creation page here_
 
-## RAG System
+- Once logged in, click "Create World" from the navigation bar
+- You'll be taken to the world editor interface
+- The world editor allows you to define all aspects of your game world
 
-This project implements a **Retrieval-Augmented Generation (RAG)** system for intelligent context selection:
+---
 
-- **Vector Embeddings**: Each game entity (item, NPC, location, etc.) has a 1536-dimensional embedding
-- **Semantic Search**: Uses pgvector with IVFFlat indexing for fast similarity search
-- **Smart Context**: Only retrieves top 3-5 most relevant entities per category (vs. all entities)
-- **Cost Reduction**: Reduces LLM context size by ~75%, significantly lowering API costs
-- **Auto-Generation**: Embeddings are automatically generated when creating/editing entities
+### Step 3: Fill in World Information
 
-For detailed RAG implementation guide, see [RAG_IMPLEMENTATION.md](RAG_IMPLEMENTATION.md).
+![World Editor](./docs/images/03-world-editor.png)
+_Place screenshot of world editor with tabs here_
 
-## Acknowledgments
+- **World Settings Tab**: Define the world's name, setting, and description
+- **Entities Tabs**: Add game entities across multiple categories:
+  - NPCs: Non-player characters
+  - Items: Objects and equipment
+  - Abilities: Skills and powers
+  - Locations: Places in your world (supports hierarchical organization)
+  - Organizations: Factions and groups
+  - Taxonomies: Classification systems
+  - Rules: Game mechanics and world rules
+  - Story Nodes: Plot points and narrative elements
+  - Player Fields: Custom attributes for player characters (e.g., Health, Mana)
+- Save your changes as you go
 
-- Built with [Next.js](https://nextjs.org/)
-- Powered by [Supabase](https://supabase.com/)
-- AI by [OpenAI](https://openai.com/)
-- Vector search with [pgvector](https://github.com/pgvector/pgvector)
-- UI components from [shadcn/ui](https://ui.shadcn.com/)
-- Animations with [Framer Motion](https://www.framer.com/motion/)
+---
+
+### Step 4: Start a Session
+
+![Browse Worlds](./docs/images/04-start-session.png)
+_Place screenshot of browse worlds page with "Start Session" button here_
+
+- Navigate to "Browse Worlds" from the navigation bar
+- Find the world you created in the list
+- Click "Start Session" on your world card
+- Fill in your player character details:
+  - Character name
+  - Character appearance
+  - Initial values for any custom player fields
+- Click "Create Session" to begin
+
+---
+
+### Step 5: Play
+
+![Game Session](./docs/images/05-play-session.png)
+_Place screenshot of active game session with chat interface here_
+
+- You'll enter the interactive game session interface
+- The AI Game Master will respond to your actions
+- Type your actions in the chat box and press Enter
+- The AI will:
+  - Narrate what happens based on your actions
+  - Update your character's fields automatically (e.g., reduce health when damaged)
+  - Reference relevant NPCs, items, and locations from your world
+  - Maintain consistency with world rules and lore
+- Your player fields are displayed on the right side and update in real-time
+- Continue playing by describing what your character does
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+**Problem**: "Failed to connect to Supabase"
+- **Solution**: Verify that your `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are correctly set in `.env`
+- Make sure there are no extra spaces or quotes in the `.env` file
+
+**Problem**: "OpenAI API error" or "Failed to generate response"
+- **Solution**: Check that your `OPENAI_API_KEY` is valid and has available credits
+- Verify the key is correctly copied into `.env` with no extra characters
+
+**Problem**: Database queries failing or tables not found
+- **Solution**: Ensure all migrations were run in order
+- Go to Supabase SQL Editor and verify tables exist
+- Re-run any missing migrations
+
+**Problem**: Vector search not working or embeddings failing
+- **Solution**: Make sure migration `022_rag_vector_search.sql` was executed
+- Verify the `pgvector` extension is enabled (check `001_extensions.sql`)
+
+**Problem**: Can't see my worlds or sessions
+- **Solution**: Check that you're logged in with the correct account
+- Verify Row Level Security (RLS) policies were created by the migrations
+- Check browser console for any authentication errors
+
+**Problem**: Images not uploading
+- **Solution**: Verify migration `021_storage_setup.sql` was run
+- Check that storage buckets were created in your Supabase project
+- Ensure file size is under the limit (usually 50MB)
+
+### Getting Help
+
+If you encounter issues not covered here:
+1. Check the browser console (F12) for error messages
+2. Review the terminal output for server-side errors
+3. Verify all environment variables are set correctly
+4. Ensure all migrations completed successfully
+5. Check that your Supabase project is active and not paused
